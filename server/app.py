@@ -1,5 +1,5 @@
 from config import app, db, make_response, request, jsonify
-from models import User, Teacher, Student, Course
+from models import Student, Admin, Course, Module
 
 
 

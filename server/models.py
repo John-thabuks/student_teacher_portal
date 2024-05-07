@@ -1,98 +1,49 @@
 from config import bcrypt, db
 
-from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy import DateTime
-import datetime
-from sqlalchemy.ext.hybrid import hybrid_property
+# from sqlalchemy_serializer import SerializerMixin
+# from sqlalchemy import DateTime
+# import datetime
+# from sqlalchemy.ext.hybrid import hybrid_property
 
-
-
-    
-
-course_student =db.Table(
-    "course_student",
-    db.Column("student_id", db.Integer, db.ForeignKey("students.id")),
-    db.Column("course_id", db.Integer, db.ForeignKey("courses.id"))
-)
-
-
-course_teacher = db.Table(
-    "course_teacher",
-    db.Column("course_id", db.Integer, db.ForeignKey("courses.id")),
-    db.Column("teacher_id", db.Integer, db.ForeignKey("teachers.id"))
-)
-
-
-class User(db.Model, SerializerMixin):
-    __tablename__ = "users"
-
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    name = db.Column(db.String, nullable=False)
-    email = db.Column(db.String, unique=True, nullable=False)
-    _password_hash = db.Column(db.String, unique=True, nullable=False)
-    user_type = db.Column(db.String, nullable=False, default="student")
-
-    #One to many relationship: list
-    students = db.relationship("Student", backref="user")
-    teachers = db.relationship("Teacher", backref="user")
-
-    # serialize the class
-    serialize_only = (name, email)
-
-    #Lets work on hashing our password
-    @hybrid_property   #This is getter
-    def password_hash(self):
-        return self._password_hash
-
-    #Lets set our password
-    @password_hash.setter
-    def password_hash(self, password):
-        new_password = bcrypt.generate_password_hash(password.encode("utf-8"))
-        self._password_hash = new_password.decode("utf-8")     
-
-
-    #Authentication
-    def autheticate(self, password):
-        pass
-    
-class Student(db.Model, SerializerMixin):
-    __tablename__ = "students"
-
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    # ForeignKey for backref created -> User
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-
-    serialize_only =(user_id)
-
-    #many to many raltionship -> course_student
-    courses = db.relationship("Course", secondary=course_student, back_populates="students")
-    
-
-class Teacher(db.Model, SerializerMixin):
-    __tablename__ = "teachers"
-
-    id = db.Column(db.Integer, primary_key = True, unique=True)
-
-
-    # ForeignKey for backref created -> User 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-
-    serialize_only = (user_id)
-
-    courses = db.relationship("Course", secondary=course_teacher, back_populates="teachers")
-
-
-
-class Course(db.Model, SerializerMixin):
-    __tablename__ = "courses"
-
+class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    #name of the course
-    name = db.Column(db.String, nullable=False, unique=True)
-    duration = db.Column(DateTime, default=datetime.timedelta(minutes=30), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    courses = db.relationship('Course', secondary='student_courses', backref=db.backref('students', lazy='dynamic'))
 
-    serialize_only = (name, duration)
-    # teachers = db.Column(db.Integer, db.ForeignKey("teachers.id"))
+class Admin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    courses = db.relationship('Course', secondary='admin_courses', backref=db.backref('admins', lazy='dynamic'))
 
-    students = db.relationship("Student", secondary=course_student, back_populates="courses")
-    teachers = db.relationship("Teacher", secondary=course_teacher, back_populates="courses")
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    thumbnail = db.Column(db.String(120), nullable=True)
+    price = db.Column(db.Float, nullable=False)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=False)
+    modules = db.relationship('Module', backref='course', lazy=True)
+
+class Module(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    media = db.Column(db.String(120), nullable=False) # Assuming media is a path to the file
+    notes = db.Column(db.Text, nullable=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+# Association table for Student-Course many-to-many relationship
+student_courses = db.Table('student_courses',
+    db.Column('student_id', db.Integer, db.ForeignKey('student.id'), primary_key=True),
+    db.Column('course_id', db.Integer, db.ForeignKey('course.id'), primary_key=True)
+)
+
+# Association table for Admin-Course many-to-many relationship
+admin_courses = db.Table('admin_courses',
+    db.Column('admin_id', db.Integer, db.ForeignKey('admin.id'), primary_key=True),
+    db.Column('course_id', db.Integer, db.ForeignKey('course.id'), primary_key=True)
+)
+
+ 

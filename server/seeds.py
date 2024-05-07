@@ -1,77 +1,104 @@
 from config import db, app
-from models import User, Teacher, Student, Course
+from models import Student, Admin, Course, Module
 from faker import Faker
 import random
+from sqlalchemy import func
 
-faker = Faker()
+fake = Faker()
 
-with app.app_context():
+app.app_context().push()
 
-    User.query.delete()
-    Teacher.query.delete()
-    Student.query.delete()
-    Course.query.delete()
+# Function to generate fake data for Student
+def generate_fake_student():
+    email = fake.email()
+    username = fake.user_name()
+    password = fake.password()
+    return Student(email=email, username=username, password=password)
 
-    
+# Function to generate fake data for Admin
+def generate_fake_admin():
+    email = fake.email()
+    password = fake.password()
+    return Admin(email=email, password=password)
 
-    # for _ in range(40):
-        # name=faker.name()
-        # userType = random.choice(["student", "teacher"])
-        # email= f'{name.replace(" ", "")}@gmail.com'
-        # password = f'{name.replace(" ","")}@1234'
-        
-
-        # user = User(name=name, email=email, password_hash=password,user_type=userType)
-        
-        # db.session.add(user)
-
-
-    for _ in range(40):
-        userType = random.choice(["student", "teacher"])  # Move inside the loop
-        name = faker.name()
-        email = f'{name.replace(" ", "")}@gmail.com'
-        password = f'{name.replace(" ","")}@1234'
-        
-        user = User(name=name, email=email, password_hash=password, user_type=userType)
-        db.session.add(user)
+# Function to generate fake data for Course
+def generate_fake_course(admin):
+    title = fake.sentence(nb_words=4)
+    description = fake.paragraph()
+    thumbnail = fake.image_url()
+    price = random.uniform(10, 100)
+    course = Course(title=title, description=description, thumbnail=thumbnail, price=price)
+    course.admin_id = admin.id  # Assigning the admin_id attribute
+    return course
 
 
-
-    for i in range(20):
-        user_id = i + 1
-        student = Student(user_id=user_id)
-        db.session.add(student)
-
-
-    for i in range(20):
-        user_id = i + 21
-        teacher = Teacher(user_id=user_id)
-        db.session.add(teacher)
-
-    # for i in range(20):
-        # course_name = f"{faker.first_name()} course"
-        # numberOfTeachers = random.randint(1,7)
-        # teachers = random.sample(range(20), numberOfTeachers)
-        
-        # courses = Course(name=course_name, teachers=[Teacher.query.get(teacher_id) for teacher_id in teachers])
-        # db.session.add(courses)
-    
-    for i in range(10):
-        course_name = f"{faker.first_name()} course"
-        
-        course = Course(name=course_name)
-        db.session.add(course)
+# Function to generate fake data for Module
+def generate_fake_module(course):
+    title = fake.sentence(nb_words=3)
+    media = fake.url()  # Using url() to generate a fake URL
+    notes = fake.paragraph()
+    return Module(title=title, media=media, notes=notes, course=course)
 
 
-    db.session.commit()
+# Seed function to populate the database
+def seed_database():
+    with app.app_context():
+        try:
+            # Delete all existing records
+            db.session.query(Student).delete()
+            db.session.query(Admin).delete()
+            db.session.query(Course).delete()
+            db.session.query(Module).delete()
+            db.session.commit()
+            print("✅ Deleted existing records from the database.")
 
-    #course_students
-    all_students = db.session.query(Student).all()
-    all_courses = db.session.query(Course).all()
+            # Create some fake admins
+            admins = [generate_fake_admin() for _ in range(3)]
+            db.session.add_all(admins)
+            db.session.commit()
+            print("✅ Created fake admins.")
 
-    for student in all_students:
-        student.courses.append(random.choice(all_courses))
-    
-    db.session.commit()
+            # Create some fake students
+            students = [generate_fake_student() for _ in range(5)]
+            db.session.add_all(students)
+            db.session.commit()
+            print("✅ Created fake students.")
 
-    
+            # Create some courses for each admin
+            for admin in admins:
+                courses = [generate_fake_course(admin) for _ in range(2)]
+                db.session.add_all(courses)
+                db.session.commit()
+
+            # Establishing relationships between admins and courses
+            for admin in admins:
+                courses = Course.query.filter_by(admin_id=admin.id).all()
+                admin.courses.extend(courses)
+                db.session.commit()
+
+            print("✅ Established relationships between admins and courses.")
+
+            # Establishing relationships between students and courses
+            for student in students:
+                courses = Course.query.order_by(func.random()).limit(2).all()  # Selecting random courses for each student
+                student.courses.extend(courses)
+                db.session.commit()
+
+            print("✅ Established relationships between students and courses.")
+
+            # Create some modules for each course
+            for course in Course.query.all():
+                modules = [generate_fake_module(course) for _ in range(random.randint(2, 4))]
+                db.session.add_all(modules)
+                db.session.commit()
+                
+            print("✅ Created modules for each course.")
+
+            print("✅ Seeding completed successfully!")
+
+        except Exception as e:
+            db.session.rollback()
+            print("❌ Seeding failed:", str(e))
+
+if __name__ == '__main__':
+    seed_database()
