@@ -73,16 +73,20 @@ def seed_database():
             # Establishing relationships between admins and courses
             for admin in admins:
                 courses = Course.query.filter_by(admin_id=admin.id).all()
-                admin.courses.extend(courses)
-                db.session.commit()
+                for course in courses:
+                    if course not in admin.courses:
+                        admin.courses.append(course)
+            db.session.commit()
 
             print("✅ Established relationships between admins and courses.")
 
             # Establishing relationships between students and courses
             for student in students:
                 courses = Course.query.order_by(func.random()).limit(2).all()  # Selecting random courses for each student
-                student.courses.extend(courses)
-                db.session.commit()
+                for course in courses:
+                    if course not in student.courses:
+                        student.courses.append(course)
+            db.session.commit()
 
             print("✅ Established relationships between students and courses.")
 
@@ -102,3 +106,4 @@ def seed_database():
 
 if __name__ == '__main__':
     seed_database()
+
