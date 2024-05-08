@@ -1,5 +1,5 @@
 from config import db, app
-from models import Student, Admin, Course, Module
+from models import Student, Admin, Course, Module, Message
 from faker import Faker
 import random
 from sqlalchemy import func
@@ -31,7 +31,6 @@ def generate_fake_course(admin):
     course.admin_id = admin.id  # Assigning the admin_id attribute
     return course
 
-
 # Function to generate fake data for Module
 def generate_fake_module(course):
     title = fake.sentence(nb_words=3)
@@ -39,6 +38,11 @@ def generate_fake_module(course):
     notes = fake.paragraph()
     return Module(title=title, media=media, notes=notes, course=course)
 
+# Function to generate fake data for Message
+def generate_fake_message(student):
+    title = fake.sentence(nb_words=6)
+    content = fake.paragraph(nb_sentences=3)
+    return Message(title=title, content=content, student=student)
 
 # Seed function to populate the database
 def seed_database():
@@ -49,6 +53,7 @@ def seed_database():
             db.session.query(Admin).delete()
             db.session.query(Course).delete()
             db.session.query(Module).delete()
+            db.session.query(Message).delete()
             db.session.commit()
             print("✅ Deleted existing records from the database.")
 
@@ -77,7 +82,6 @@ def seed_database():
                     if course not in admin.courses:
                         admin.courses.append(course)
             db.session.commit()
-
             print("✅ Established relationships between admins and courses.")
 
             # Establishing relationships between students and courses
@@ -87,7 +91,6 @@ def seed_database():
                     if course not in student.courses:
                         student.courses.append(course)
             db.session.commit()
-
             print("✅ Established relationships between students and courses.")
 
             # Create some modules for each course
@@ -95,8 +98,14 @@ def seed_database():
                 modules = [generate_fake_module(course) for _ in range(random.randint(2, 4))]
                 db.session.add_all(modules)
                 db.session.commit()
-                
             print("✅ Created modules for each course.")
+
+            # Create some messages for each student
+            for student in students:
+                messages = [generate_fake_message(student) for _ in range(random.randint(1, 3))]  # Generate 1 to 3 messages for each student
+                db.session.add_all(messages)
+                db.session.commit()
+            print("✅ Created messages for each student.")
 
             print("✅ Seeding completed successfully!")
 
@@ -106,4 +115,3 @@ def seed_database():
 
 if __name__ == '__main__':
     seed_database()
-
