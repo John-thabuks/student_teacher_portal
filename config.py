@@ -9,7 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] ="sqlite:///student_portal.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATION"] = True
-app.config["SECRET_KET"] = "92256b9d8a05214dab4362d83c9e17d1"
+app.config["SECRET_KEY"] = "92256b9d8a05214dab4362d83c9e17d1"
 
 app.json.compact=False
 db =SQLAlchemy()
