@@ -2,5 +2,9 @@
   {
     "type": "sqlite",
     "path": "/home/thabuks/Documents/Practice/student_teacher_portal/server/instance/student_portal.db"
+  },
+  {
+    "type": "sqlite",
+    "path": "/home/thabuks/Documents/Practice/Fresh_start/student_teacher_portal/instance/student_portal.db"
   }
 ]
