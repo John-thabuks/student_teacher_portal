@@ -1,19 +1,52 @@
 from config import bcrypt, db
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class Student(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    _password = db.Column(db.String(), nullable=False)
     courses = db.relationship('Course', secondary='student_courses', backref=db.backref('students', lazy='dynamic'))
     messages = db.relationship('Message', backref='student', lazy='dynamic')
+
+    #getter for our  _password
+    @hybrid_property
+    def password_hash(self):
+        return self._password
+    
+    #setter for our _password
+    @password_hash.setter   
+    def password_hash(self, user_password):
+        new_password_hash = bcrypt.generate_password_hash(user_password.encode("utf-8"))
+        self._password = new_password_hash.decode("utf-8")
+
+    #authenticate method :-> used to compare user's password to _password_hash
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(self._password, password.encode("utf-8"))
+
 
 class Admin(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    _password = db.Column(db.String(), nullable=False)
     courses = db.relationship('Course', secondary='admin_courses', backref=db.backref('admins', lazy='dynamic'))
+
+    #getter for our  _password
+    @hybrid_property
+    def password_hash(self):
+        return self._password
+    
+    #setter for our _password
+    @password_hash.setter   
+    def password_hash(self, user_password):
+        new_password_hash = bcrypt.generate_password_hash(user_password.encode("utf-8"))
+        self._password = new_password_hash.decode("utf-8")
+
+    #authenticate method :-> used to compare user's password to _password_hash
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(self._password, password.encode("utf-8"))
+
 
 class Course(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)

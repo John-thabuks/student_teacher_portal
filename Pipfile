@@ -11,6 +11,7 @@ flask-migrate = "*"
 flask-serialize = "*"
 faker = "*"
 sqlalchemy-serializer = "*"
+pyjwt = "*"
 
 [dev-packages]
 

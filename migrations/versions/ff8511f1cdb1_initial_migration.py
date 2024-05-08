@@ -1,8 +1,8 @@
 """initial migration
 
-Revision ID: 0bb1441996ad
+Revision ID: ff8511f1cdb1
 Revises: 
-Create Date: 2024-05-07 18:10:02.326549
+Create Date: 2024-05-08 16:26:59.835666
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0bb1441996ad'
+revision = 'ff8511f1cdb1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,7 +21,7 @@ def upgrade():
     op.create_table('admin',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
-    sa.Column('password', sa.String(length=120), nullable=False),
+    sa.Column('_password', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
@@ -29,7 +29,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('username', sa.String(length=80), nullable=False),
-    sa.Column('password', sa.String(length=120), nullable=False),
+    sa.Column('_password', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('username')
@@ -42,6 +42,14 @@ def upgrade():
     sa.Column('price', sa.Float(), nullable=False),
     sa.Column('admin_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['admin_id'], ['admin.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('message',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=120), nullable=False),
+    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('student_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['student_id'], ['student.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('admin_courses',
@@ -75,6 +83,7 @@ def downgrade():
     op.drop_table('student_courses')
     op.drop_table('module')
     op.drop_table('admin_courses')
+    op.drop_table('message')
     op.drop_table('course')
     op.drop_table('student')
     op.drop_table('admin')
