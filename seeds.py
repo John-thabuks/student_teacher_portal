@@ -12,14 +12,19 @@ app.app_context().push()
 def generate_fake_student():
     email = fake.email()
     username = fake.user_name()
-    password = fake.password()
-    return Student(email=email, username=username, password=password)
+    password = f"{username}@1234"   #Generating password based on username
+    student = Student(email=email, username=username)
+    student.password_hash = password
+    return student
 
 # Function to generate fake data for Admin
 def generate_fake_admin():
     email = fake.email()
-    password = fake.password()
-    return Admin(email=email, password=password)
+    name = email.split('@')[0]
+    password = f"{name}@1234"
+    admin =  Admin(email=email)
+    admin.password_hash = password
+    return admin
 
 # Function to generate fake data for Course
 def generate_fake_course(admin):
