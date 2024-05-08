@@ -177,6 +177,10 @@ def admin_courses(current_user):
         new_course = Course(title=data['title'], description=data['description'], thumbnail=data.get('thumbnail'), price=data['price'], admin_id=current_user.id)
         db.session.add(new_course)
         db.session.commit()
+
+        # Adding the created course to the admin_courses relationship table
+        current_user.courses.append(new_course)
+        db.session.commit()
         
         return jsonify({'message': 'Course created successfully!', 'course_id': new_course.id}), 201
 
