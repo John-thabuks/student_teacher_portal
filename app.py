@@ -1,9 +1,10 @@
-from config import app, db
-from flask import jsonify, request, make_response
+from config import app, db, stripe
+from flask import jsonify, request, make_response, redirect, url_for
 from models import Course, Student, Admin
 import jwt
 from functools import wraps
 import datetime
+
 
 
 # Define your token_required decorator
@@ -29,6 +30,7 @@ def token_required(f):
 
 #We can get all courses
 @app.route('/course', methods=['GET'])
+# @token_required
 def get_all_courses():
     try:
         courses = Course.query.all()
@@ -183,6 +185,118 @@ def admin_courses(current_user):
         db.session.commit()
         
         return jsonify({'message': 'Course created successfully!', 'course_id': new_course.id}), 201
+
+
+
+
+
+# @app.route('/checkout/<int:course_id>', methods=['GET'])
+# @token_required  
+# def checkout(current_user, course_id):
+#     # Query the course by ID
+#     course = Course.query.get(course_id)
+#     if not course:
+#         return jsonify({'error': 'Course not found'}), 404
+
+#     # Create a Stripe checkout session
+#     try:
+#         session = stripe.checkout.Session.create(
+#             payment_method_types=['card'],
+#             line_items=[{
+#                 'price_data': {
+#                     'currency': 'kes',
+#                     'product_data': {
+#                         'name': course.title,
+#                     },
+#                     'unit_amount': int(course.price * 100),  # Convert price to cents
+#                 },
+#                 'quantity': 1,
+#             }],
+#             mode='payment',
+#             success_url=url_for('success', _external=True),
+#             cancel_url=url_for('cancel', _external=True),
+#         )
+
+#         current_user.courses.append(course)
+#         db.session.commit()
+
+#         return redirect(session.url, code=303)
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
+# # Route for successful payment
+# @app.route('/success')
+# def success():
+#     return make_response({"message": "Successfully purchase!"})
+
+# # Route for canceled payment
+# @app.route('/cancel')
+# def cancel():
+#     return redirect("/course")
+
+
+
+from sqlalchemy.exc import IntegrityError
+
+@app.route('/checkout/<int:course_id>', methods=['GET'])
+@token_required  
+def checkout(current_user, course_id):
+    # Query the course by ID
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({'error': 'Course not found'}), 404
+
+    # Check if the course price is less than or equal to 0
+    # if course.price <= 0:
+    #     return jsonify({'error': 'Course price must be greater than 0'}), 400
+    
+    # Calculate the unit_amount, ensuring it meets the minimum requirements
+    unit_amount = max(int(course.price * 100), 50) 
+
+
+    # Create a Stripe checkout session
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': course.title,
+                    },
+                    'unit_amount': unit_amount,  
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=url_for('success', _external=True),
+            cancel_url=url_for('cancel', _external=True),
+        )
+
+        current_user.courses.append(course)
+        db.session.commit()
+
+        return redirect(session.url, code=303)
+    except IntegrityError as e:
+        # Handle the unique constraint violation
+        db.session.rollback()  # Rollback the transaction
+        return jsonify({'error': 'Student already enrolled in this course'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Route for successful payment
+@app.route('/success')
+def success():
+    return make_response({"message": "Successfully purchase!"})
+
+# Route for canceled payment
+@app.route('/cancel')
+def cancel():
+    return redirect("/course")
+
+
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
