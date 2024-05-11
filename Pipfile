@@ -12,6 +12,7 @@ flask-serialize = "*"
 faker = "*"
 sqlalchemy-serializer = "*"
 pyjwt = "*"
+stripe = "*"
 
 [dev-packages]
 
