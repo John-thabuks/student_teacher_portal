@@ -4,6 +4,7 @@ from models import Course, Student, Admin
 import jwt
 from functools import wraps
 import datetime
+from sqlalchemy.exc import IntegrityError
 
 
 
@@ -234,9 +235,6 @@ def admin_courses(current_user):
 # def cancel():
 #     return redirect("/course")
 
-
-
-from sqlalchemy.exc import IntegrityError
 
 @app.route('/checkout/<int:course_id>', methods=['GET'])
 @token_required  
