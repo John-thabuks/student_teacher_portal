@@ -13,6 +13,7 @@ faker = "*"
 sqlalchemy-serializer = "*"
 pyjwt = "*"
 stripe = "*"
+flask-cors = "*"
 
 [dev-packages]
 
