@@ -36,6 +36,7 @@ def get_all_courses():
     try:
         courses = Course.query.all()
         # Serialize the courses to JSON
+        
         course_data = [{'id': course.id, 'title': course.title, 'description': course.description, 'thumbnail': course.thumbnail, 'price': course.price} for course in courses]
         return jsonify({'courses': course_data}), 200
     except Exception as e:
