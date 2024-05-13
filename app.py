@@ -44,30 +44,52 @@ def get_all_courses():
 
 
 
-#Log in View and route
-@app.route('/login', methods=['POST'])
-def login():
+# Student login route
+@app.route('/student-login', methods=['POST'])
+def student_login():
     user = request.get_json()    
     email = user["email"]
     password = user["password"]
 
-    target_user = Student.query.filter_by(email=email).first() or Admin.query.filter_by(email=email).first()
+    student = Student.query.filter_by(email=email).first()
 
-    if target_user:
-        if target_user.authenticate(password):   #method we defined in models for checking if password in db === <user[password]_given>
+    if student:
+        if student.authenticate(password):
             token_generated = jwt.encode({
-                "id": target_user.id, 
-                "email": target_user.email,                  
-                "exp": datetime.datetime.now()+datetime.timedelta(minutes=45)
+                "id": student.id, 
+                "email": student.email,                  
+                "exp": datetime.datetime.now() + datetime.timedelta(minutes=45)
                 }, 
                 app.config["SECRET_KEY"],"HS256")
-            return make_response({"message":"Log in successful", "token":token_generated}, 200)
-        
-        return make_response({"message": "jokes on you. Wrong credentials"},403)
-
+            return make_response({"message": "Login successful", "token": token_generated}, 200)
+        else:
+            return make_response({"message": "Invalid credentials"}, 403)
     else:
-        return make_response({"message": "user not found"},404)
-    
+        return make_response({"message": "Student not found"}, 404)
+
+# Admin login route
+@app.route('/admin-login', methods=['POST'])
+def admin_login():
+    user = request.get_json()    
+    email = user["email"]
+    password = user["password"]
+
+    admin = Admin.query.filter_by(email=email).first()
+
+    if admin:
+        if admin.authenticate(password):
+            token_generated = jwt.encode({
+                "id": admin.id, 
+                "email": admin.email,                  
+                "exp": datetime.datetime.now() + datetime.timedelta(minutes=45)
+                }, 
+                app.config["SECRET_KEY"],"HS256")
+            return make_response({"message": "Login successful", "token": token_generated}, 200)
+        else:
+            return make_response({"message": "Invalid credentials"}, 403)
+    else:
+        return make_response({"message": "Admin not found"}, 404)
+
 
 #Create a sign up view
 @app.route('/signup', methods=['POST'])
@@ -159,7 +181,7 @@ def get_student_courses(current_user):
         return jsonify({'error': 'Failed to retrieve courses', 'message': str(e)}), 500
 
 
-# Lets define route for retrieving courses belonging to a certain admin
+# Define route for retrieving courses belonging to a certain admin
 @app.route('/courses/admin', methods=['GET', 'POST'])
 @token_required
 def admin_courses(current_user):
@@ -174,18 +196,25 @@ def admin_courses(current_user):
 
     elif request.method == 'POST':
         data = request.get_json()
-        if not data or not data.get('title') or not data.get('description') or not data.get('price'):
+        if not data or not data.get('title') or not data.get('description') or not data.get('price') or not data.get('modules'):
             return jsonify({'error': 'Incomplete course data!'}), 400
 
+        # Create a new course
         new_course = Course(title=data['title'], description=data['description'], thumbnail=data.get('thumbnail'), price=data['price'], admin_id=current_user.id)
         db.session.add(new_course)
         db.session.commit()
 
-        # Adding the created course to the admin_courses relationship table
-        current_user.courses.append(new_course)
+        # Add modules to the course
+        modules_data = data['modules']
+        for module_data in modules_data:
+            new_module = Module(title=module_data['title'], thumbnail=module_data['thumbnail'], notes=module_data.get('notes'), course_id=new_course.id)
+            db.session.add(new_module)
+
         db.session.commit()
         
         return jsonify({'message': 'Course created successfully!', 'course_id': new_course.id}), 201
+
+
 
 
 
