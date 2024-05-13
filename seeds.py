@@ -31,7 +31,7 @@ def generate_fake_course(admin):
     title = fake.sentence(nb_words=4)
     description = fake.paragraph()
     thumbnail = fake.image_url()
-    price = random.uniform(10, 100)
+    price = f"{random.uniform(10, 100):.02f}"
     course = Course(title=title, description=description, thumbnail=thumbnail, price=price)
     course.admin_id = admin.id  # Assigning the admin_id attribute
     return course

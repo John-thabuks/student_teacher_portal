@@ -10,7 +10,7 @@ class Student(db.Model, SerializerMixin):
     courses = db.relationship('Course', secondary='student_courses', backref=db.backref('students', lazy='dynamic'))
     messages = db.relationship('Message', backref='student', lazy='dynamic')
 
-    serialize_only = (email, username)
+    serialize_only = ("email", "username")
     #getter for our  _password
     @hybrid_property
     def password_hash(self):
@@ -48,7 +48,7 @@ class Admin(db.Model, SerializerMixin):
     def authenticate(self, password):
         return bcrypt.check_password_hash(self._password, password.encode("utf-8"))
 
-    serialize_only = (email,)
+    serialize_only = ("email",)
 
 class Course(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,7 +67,7 @@ class Module(db.Model, SerializerMixin):
     notes = db.Column(db.Text, nullable=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
 
-    serialize_only = (title, media,notes, course_id)
+    serialize_only = ("title", "media","notes", "course_id")
 
 class Message(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,7 +75,7 @@ class Message(db.Model, SerializerMixin):
     content = db.Column(db.Text, nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
 
-    serialize_only = (title, content, student_id)
+    serialize_only = ("title", "content", "student_id")
 
 # Association table for Student-Course many-to-many relationship
 student_courses = db.Table('student_courses',
